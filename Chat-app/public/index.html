@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Chatting App</title>
+    </head>
+    <body>
+        <h1>Chatting</h1>
+        <input id="1" type="text">
+        <button onclick="createConnection()" id="2" >Send</button>
+        <script src="/socket.io/socket.io.js" ></script>
+        <script>
+            const input=document.getElementById('1');
+            const btn=document.getElementById('2');
+
+            function createConnection(){
+                const socket=io();
+            }
+
+        </script>
+    </body>
+</html>
