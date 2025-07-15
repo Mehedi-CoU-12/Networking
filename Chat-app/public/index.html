@@ -4,42 +4,192 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Chatting App</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .container {
+                display: flex;
+                gap: 20px;
+            }
+
+            .chat-section {
+                flex: 2;
+            }
+
+            .users-section {
+                flex: 1;
+                background: #f5f5f5;
+                padding: 15px;
+                border-radius: 5px;
+            }
+
+            .user-list {
+                list-style: none;
+                padding: 0;
+            }
+
+            .user-list li {
+                padding: 5px;
+                margin: 5px 0;
+                background: white;
+                border-radius: 3px;
+                font-size: 12px;
+            }
+
+            .your-id {
+                color: green;
+                font-weight: bold;
+            }
+
+            .message {
+                margin: 10px 0;
+                padding: 10px;
+                border-radius: 5px;
+            }
+
+            .sent {
+                background: #dcf8c6;
+                text-align: right;
+            }
+
+            .received {
+                background: #f1f1f1;
+            }
+
+            .input-container {
+                display: flex;
+                gap: 10px;
+                margin-top: 20px;
+            }
+
+            input[type="text"] {
+                flex: 1;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+            }
+
+            button {
+                padding: 10px 20px;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+        </style>
     </head>
     <body>
-        <h1>Chatting</h1>
-        <input
-            id="messageInput"
-            type="text"
-            placeholder="type your message..."
-            onchange="createConnection()"
-        />
-        <button onclick="createConnection()">Send</button>
-        <div id="message"></div>
+        <h1>Chatting App</h1>
+
+        <div class="container">
+            <div class="chat-section">
+                <div id="messages"></div>
+                <div class="input-container">
+                    <input
+                        id="messageInput"
+                        type="text"
+                        placeholder="Type your message..."
+                    />
+                    <button onclick="sendMessage()">Send</button>
+                </div>
+                <div class="input-container">
+                    <input
+                        id="roomInput"
+                        onchange="sendMessage()"
+                        type="text"
+                        placeholder="type receiver id..."
+                    />
+                    <p>Type receiver id here. keep empty for grp chat</p>
+                </div>
+            </div>
+
+            <div class="users-section">
+                <h3>Active Users</h3>
+                <p>Your ID: <span id="yourId">-</span></p>
+                <p>Total Users: <span id="userCount">0</span></p>
+                <ul id="userList" class="user-list"></ul>
+            </div>
+        </div>
 
         <script src="/socket.io/socket.io.js"></script>
         <script>
             const socket = io();
             const input = document.getElementById("messageInput");
-            const messageDiv = document.getElementById("message");
+            const messagesDiv = document.getElementById("messages");
+            const userList = document.getElementById("userList");
+            const userCount = document.getElementById("userCount");
+            const yourIdSpan = document.getElementById("yourId");
+            const roomInput = document.getElementById("roomInput");
 
-            socket.on("sendMessageFromServer", (message) => {
-                const other = document.createElement("p");
+            let currentUserId = null;
 
-                other.append(message);
-                messageDiv.append(other);
+            // Get your own ID
+            socket.on("yourId", (id) => {
+                currentUserId = id;
+                yourIdSpan.textContent = id;
+                yourIdSpan.className = "your-id";
             });
 
-            function createConnection() {
+            // Update active users list
+            socket.on("activeUsers", (users) => {
+                userList.innerHTML = "";
+                userCount.textContent = users.length;
+
+                users.forEach((user) => {
+                    const li = document.createElement("li");
+                    li.textContent = user.id;
+
+                    // Highlight your own ID
+                    if (user.id === currentUserId) {
+                        li.style.backgroundColor = "#d4edda";
+                        li.textContent += " (You)";
+                    }
+
+                    userList.appendChild(li);
+                });
+            });
+
+            function sendMessage() {
                 const message = input.value.trim();
-                socket.emit("user-message", message);
-                const own = document.createElement("p");
-                own.innerText = message;
+                const room = roomInput.value.trim();
+                if (message) {
+                    // Display message immediately for sender
+                    displayMessage(message, "sent", "You");
 
-                own.style = "padding-left:200px;background-color: azure;";
-                messageDiv.append(own);
-
-                input.value = "";
+                    // Send to server
+                    socket.emit("user-message", message, room);
+                    input.value = "";
+                }
             }
+
+            // Receive messages from others
+            socket.on("sendMessageFromServer", (data) => {
+                displayMessage(data.message, "received", data.senderId);
+            });
+
+            function displayMessage(message, type, senderId) {
+                const messageDiv = document.createElement("div");
+                messageDiv.className = `message ${type}`;
+                messageDiv.innerHTML = `
+                    <small>${senderId}</small><br>
+                    ${message}
+                `;
+                messagesDiv.appendChild(messageDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+
+            // Send message on Enter key
+            input.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") {
+                    sendMessage();
+                }
+            });
         </script>
     </body>
 </html>
