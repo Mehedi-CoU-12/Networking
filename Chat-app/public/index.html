@@ -11,6 +11,7 @@
             id="messageInput"
             type="text"
             placeholder="type your message..."
+            onchange="createConnection()"
         />
         <button onclick="createConnection()">Send</button>
         <div id="message"></div>
@@ -22,16 +23,21 @@
             const messageDiv = document.getElementById("message");
 
             socket.on("sendMessageFromServer", (message) => {
+                const other = document.createElement("p");
 
-                const p=document.createElement('p');
-                p.append(message);
-                messageDiv.append(p);
+                other.append(message);
+                messageDiv.append(other);
             });
 
             function createConnection() {
                 const message = input.value.trim();
-
                 socket.emit("user-message", message);
+                const own = document.createElement("p");
+                own.innerText = message;
+
+                own.style = "padding-left:200px;background-color: azure;";
+                messageDiv.append(own);
+
                 input.value = "";
             }
         </script>
