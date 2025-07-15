@@ -7,7 +7,6 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-
 //middleware
 app.use(express.static(path.resolve("./public")));
 
@@ -15,14 +14,16 @@ app.use(express.static(path.resolve("./public")));
 io.on("connection", (socket) => {
     console.log("a new user has connected", socket.id);
 
-    socket.on("message", () => {});
+    socket.on("user-message", (message) => {
+        io.emit("sendMessageFromServer", message);
+    });
 
     socket.on("close", () => {});
 });
 
 //router
-app.use("/", (res, req) => {
-    return res.sendFile("/public/index.html");
+app.get("/", (req, res) => {
+    return res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 server.listen(9000, () => {
